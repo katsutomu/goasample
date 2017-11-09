@@ -36,6 +36,7 @@ func initService(service *goa.Service) {
 type OperandsController interface {
 	goa.Muxer
 	Add(*AddOperandsContext) error
+	Subtract(*SubtractOperandsContext) error
 }
 
 // MountOperandsController "mounts" a Operands resource controller on the given service.
@@ -57,6 +58,21 @@ func MountOperandsController(service *goa.Service, ctrl OperandsController) {
 	}
 	service.Mux.Handle("GET", "/add/:left/:right", ctrl.MuxHandler("add", h, nil))
 	service.LogInfo("mount", "ctrl", "Operands", "action", "Add", "route", "GET /add/:left/:right")
+
+	h = func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
+		// Check if there was an error loading the request
+		if err := goa.ContextError(ctx); err != nil {
+			return err
+		}
+		// Build the context
+		rctx, err := NewSubtractOperandsContext(ctx, req, service)
+		if err != nil {
+			return err
+		}
+		return ctrl.Subtract(rctx)
+	}
+	service.Mux.Handle("GET", "/subtract/:left/:right", ctrl.MuxHandler("subtract", h, nil))
+	service.LogInfo("mount", "ctrl", "Operands", "action", "Subtract", "route", "GET /subtract/:left/:right")
 }
 
 // SwaggerController is the controller interface for the Swagger actions.

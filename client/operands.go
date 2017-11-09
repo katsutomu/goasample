@@ -48,3 +48,34 @@ func (c *Client) NewAddOperandsRequest(ctx context.Context, path string) (*http.
 	}
 	return req, nil
 }
+
+// SubtractOperandsPath computes a request path to the subtract action of operands.
+func SubtractOperandsPath(left int, right int) string {
+	param0 := strconv.Itoa(left)
+	param1 := strconv.Itoa(right)
+
+	return fmt.Sprintf("/subtract/%s/%s", param0, param1)
+}
+
+// subtract returns the subtract of the left and right parameters in the response body
+func (c *Client) SubtractOperands(ctx context.Context, path string) (*http.Response, error) {
+	req, err := c.NewSubtractOperandsRequest(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+	return c.Client.Do(ctx, req)
+}
+
+// NewSubtractOperandsRequest create the request corresponding to the subtract action endpoint of the operands resource.
+func (c *Client) NewSubtractOperandsRequest(ctx context.Context, path string) (*http.Request, error) {
+	scheme := c.Scheme
+	if scheme == "" {
+		scheme = "http"
+	}
+	u := url.URL{Host: c.Host, Scheme: scheme, Path: path}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	return req, nil
+}

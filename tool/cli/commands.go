@@ -36,6 +36,15 @@ type (
 		PrettyPrint bool
 	}
 
+	// SubtractOperandsCommand is the command line data structure for the subtract action of operands
+	SubtractOperandsCommand struct {
+		// Left operand
+		Left int
+		// Right operand
+		Right       int
+		PrettyPrint bool
+	}
+
 	// DownloadCommand is the command line data structure for the download command.
 	DownloadCommand struct {
 		// OutFile is the path to the download output file.
@@ -58,6 +67,20 @@ func RegisterCommands(app *cobra.Command, c *client.Client) {
 	}
 	tmp1.RegisterFlags(sub, c)
 	sub.PersistentFlags().BoolVar(&tmp1.PrettyPrint, "pp", false, "Pretty print response body")
+	command.AddCommand(sub)
+	app.AddCommand(command)
+	command = &cobra.Command{
+		Use:   "subtract",
+		Short: `subtract returns the subtract of the left and right parameters in the response body`,
+	}
+	tmp2 := new(SubtractOperandsCommand)
+	sub = &cobra.Command{
+		Use:   `operands ["/subtract/LEFT/RIGHT"]`,
+		Short: ``,
+		RunE:  func(cmd *cobra.Command, args []string) error { return tmp2.Run(c, args) },
+	}
+	tmp2.RegisterFlags(sub, c)
+	sub.PersistentFlags().BoolVar(&tmp2.PrettyPrint, "pp", false, "Pretty print response body")
 	command.AddCommand(sub)
 	app.AddCommand(command)
 
@@ -287,6 +310,34 @@ func (cmd *AddOperandsCommand) Run(c *client.Client, args []string) error {
 
 // RegisterFlags registers the command flags with the command line.
 func (cmd *AddOperandsCommand) RegisterFlags(cc *cobra.Command, c *client.Client) {
+	var left int
+	cc.Flags().IntVar(&cmd.Left, "left", left, `Left operand`)
+	var right int
+	cc.Flags().IntVar(&cmd.Right, "right", right, `Right operand`)
+}
+
+// Run makes the HTTP request corresponding to the SubtractOperandsCommand command.
+func (cmd *SubtractOperandsCommand) Run(c *client.Client, args []string) error {
+	var path string
+	if len(args) > 0 {
+		path = args[0]
+	} else {
+		path = fmt.Sprintf("/subtract/%v/%v", cmd.Left, cmd.Right)
+	}
+	logger := goa.NewLogger(log.New(os.Stderr, "", log.LstdFlags))
+	ctx := goa.WithLogger(context.Background(), logger)
+	resp, err := c.SubtractOperands(ctx, path)
+	if err != nil {
+		goa.LogError(ctx, "failed", "err", err)
+		return err
+	}
+
+	goaclient.HandleResponse(c.Client, resp, cmd.PrettyPrint)
+	return nil
+}
+
+// RegisterFlags registers the command flags with the command line.
+func (cmd *SubtractOperandsCommand) RegisterFlags(cc *cobra.Command, c *client.Client) {
 	var left int
 	cc.Flags().IntVar(&cmd.Left, "left", left, `Left operand`)
 	var right int
